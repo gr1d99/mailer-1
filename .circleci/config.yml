@@ -1,0 +1,50 @@
+version: 2
+jobs:
+  build:
+    parallelism: 3
+    docker:
+      - image: circleci/ruby:2.4.1-jessie-node
+        environment:
+          BUNDLE_JOBS: 3
+          BUNDLE_RETRY: 3
+          BUNDLE_PATH: vendor/bundle
+          PGHOST: 127.0.0.1
+          PGUSER: example_2
+          RAILS_ENV: test
+      - image: circleci/postgres:9.5-alpine
+        environment:
+          POSTGRES_USER: example_2
+          POSTGRES_DB: example
+          POSTGRES_PASSWORD: ""
+    steps:
+      - checkout
+
+      - run:
+          name: Which bundler?
+          command: bundle -v
+
+      - restore_cache:
+          keys:
+            - example-2-bundle-v2-{{ checksum "Gemfile.lock" }}
+            - example-2-bundle-v2-
+      - run:
+          name: Bundle install
+          command: bundle check || bundle install
+
+      - save_cache:
+          key: example-2-bundle-v2-{{ checksum "Gemfile.lock" }}
+          paths:
+            - vendor/bundle
+
+      - run:
+          name: Wait for DB
+          command: dockerize -wait tcp://localhost:5432 -timeout 1m
+
+      - run:
+          name: Database setup
+          command: bin/rails db:schema:load --trace
+
+      - run:
+          name: Run RSPEC in parallel
+          command: |
+            bundle exec rspec
