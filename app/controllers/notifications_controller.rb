@@ -2,13 +2,13 @@ class NotificationsController < ApplicationController
   def new; end
 
   def create
-    NotifierMailer.with(details: notification_params).notify.deliver_now
+    NotifierJob.perform_later(notification_params)
     redirect_to root_path
   end
 
   private
 
   def notification_params
-    params.permit(:to, :subject, :body)
+    { to: params[:to], subject: params[:subject], body: params[:body] }
   end
 end
