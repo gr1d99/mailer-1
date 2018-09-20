@@ -55,6 +55,7 @@ end
 
 group :test do
   gem 'guard-rspec', require: false
+  gem 'simplecov'
 end
 
 
