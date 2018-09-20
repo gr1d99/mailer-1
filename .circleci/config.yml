@@ -16,6 +16,7 @@ jobs:
           POSTGRES_USER: example_2
           POSTGRES_DB: example
           POSTGRES_PASSWORD: ""
+
     steps:
       - checkout
 
@@ -44,7 +45,22 @@ jobs:
           name: Database setup
           command: bin/rails db:schema:load --trace
 
+  test:
+    docker:
+      - image: circleci/ruby:2.4.1-jessie-node
+      - image: circleci/postgres:9.5-alpine
+    steps:
+      - checkout
       - run:
           name: Run RSPEC in parallel
           command: |
             bundle exec rspec
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
